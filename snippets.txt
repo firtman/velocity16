@@ -1,0 +1,136 @@
+Snippet #1: SW installation
+==========
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register("serviceworker.js")
+        .then(function(registration) {
+       // Worker is registered   
+    }).catch(function(error) {
+       // There was an error registering the SW 
+    });     
+}
+
+Snippet #2: Emulating a Web Server
+==========
+
+self.addEventListener('fetch', function(event) {
+    var url = event.request.url;
+    var body = "";
+    var mockResponse = new Response(body, {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'text/html'
+      }
+    });
+    event.respondWith(mockResponse);
+  });
+  
+  
+Snippet #3: Pre-caching assets
+==========
+
+var urls = [];
+
+self.addEventListener("install", function(event) {
+    console.log("The SW is now installed"); 
+    event.waitUntil(caches.open("myAppCache").then(function(cache) {
+        return cache.addAll(urls);
+    }));
+});
+
+Snippet #4: Cache First
+==========
+
+self.addEventListener("fetch", function(event) {
+    event.respondWith(caches.match(event.request)
+        .then(function(response) {
+            if (response) {
+                // The request is in the cache 
+                return response;
+            } else {
+                // We need to go to the network  
+                return fetch(event.request);
+            }
+        })
+     )
+});
+
+
+Snippet #5 (Stale while Revalidate)
+==========
+
+self.addEventListener('fetch', function(event) {
+    event.respondWith(
+        caches.match(event.request)
+            .then(function(response) {
+                // Even if the response is in the cache, we fetch it
+                // and update the cache for future usage
+                var fetchPromise = fetch(event.request).then(
+                    function(networkResponse) {
+                        caches.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                // We use the currently cached version if it's there
+                return response || fetchPromise;
+            })
+        );
+    });  
+
+
+
+Snippet #6: Network first (server or connection errors)
+==========
+
+self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      fetch(request).catch(function(error) {
+        return caches.open(myAppCache).then(function(cache) {
+          return cache.match(request);
+        });
+      })
+    );
+  }
+});
+
+Snippet #7 (delete old storages)
+==========
+
+self.addEventListener('activate', function(event) {
+ 
+  // Array of cache that we will use in this version
+  var cacheWhitelist = ['pages-cache-v1', 'blog-posts-cache-v1'];
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // Deletes the cache because we won't use it here
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});    
+    
+Snippet #8: Mock API
+==========
+
+self.addEventListener('fetch', function(event) {
+  var requestUrl = new URL(event.request.url);
+
+  if (requestUrl.pathname === '/api') {
+    var responseBody = {
+     };
+    var responseInit = {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    var mockResponse = new Response(JSON.stringify(responseBody), responseInit);
+    event.respondWith(mockResponse);
+  }
+});

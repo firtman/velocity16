@@ -1,0 +1,117 @@
+<!doctype html>
+<title>Push Notifications</title>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.json">
+
+<style>
+    #push { display: none }
+</style>
+
+<section id="push">
+    <output>Push Notifications available</output>
+    <input type="button" id="btnSubscribe" value="Subscribe">
+</section>
+
+<script>    
+   
+    // Check if Push Notifications are available
+    var pushAvailable = false;
+    if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
+        pushAvailable = "webpush";
+        registerServiceWorker();
+    } else if ('safari' in window && 'pushNotification' in window.safari) {
+        pushAvailable = "safari"  
+        alert("Safari notifications not available now");   
+    } 
+    
+    if (pushAvailable) {
+        document.querySelector("#push").style.display = "block";
+        document.querySelector("#btnSubscribe").addEventListener("click", subscribe);
+    } else {
+        alert("Your browser doesn't support Push notifications");   
+    }
+    
+    function subscribe() {
+        if (pushAvailable=="safari") {
+            // TODO
+        } else {
+            // Chrome / Firefox
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.pushManager.subscribe({userVisibleOnly: true})
+                  .then(updatePushStatus)
+                  .catch(function(e) {
+                        if (Notification.permission === 'denied') {
+                            alert("You don't want push notifications.");  
+                        } else {
+                            console.log('Unable to subscribe to push.', e);
+                        }
+                  });
+            });
+        }
+    }
+    
+    function registerServiceWorker() {
+        navigator.serviceWorker.register('sw.js')
+            .then(function(registration) {
+            // Check the current Notification permission.  
+            if (Notification.permission === 'denied') {  
+                alert("You didn't accept push notifications. :(");  
+                return;  
+            }
+            navigator.serviceWorker.ready.then(function(reg) {  
+                registration.pushManager.getSubscription()
+                    .then(function(subscription) {  
+                        if (!subscription) {  
+                          console.log('Not yet subscribed to Push')
+                        } else {                        
+                            updatePushStatus(subscription);
+                        }
+                      })  
+                    .catch(function(err) {  
+                        console.log('Error during getSubscription()', err);  
+                    }); 
+          });  
+
+        });        
+    }
+            
+    function updatePushStatus(subscription) {
+        if (subscription) {
+            var endpoint = subscription.endpoint;
+            var key = null;
+            if ('getKey' in subscription) {
+                // Key to encode payload data later
+                var keyAB = subscription.getKey('p256dh');
+                var key = arrayBufferToBase64(keyAB);
+            }
+            console.log("Endpoint: " + endpoint);
+            console.log("Key: " + (key ? key : "not available"));
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/push/subscribe/");
+            xhr.setRequestHeader("Content-type", "application/json");
+            xhr.addEventListener("load", function() {
+                console.log("Server has received the endpoint");
+            });
+            xhr.send(JSON.stringify({
+                endpoint: endpoint,
+                key: key
+            }));
+        } else {
+            console.log("Subscription data is null");
+        }
+    }
+            
+    
+   
+   function arrayBufferToBase64(buffer) {
+        var binary = "";
+        var bytes = new Uint8Array(buffer);
+        var len = bytes.byteLength;
+        for (var i=0; i<len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+   }
+    
+</script>
