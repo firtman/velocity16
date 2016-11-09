@@ -1,0 +1,15 @@
+<!doctype html>
+<title>Velocity EUR-USD Converter</title>
+<meta name="viewport" content="width=device-width">
+<script src="converter.js" defer></script>
+
+<style>
+    img { width: 50%; max-width: 200px; display: block }
+    output { display: block; margin-top: 20px }
+</style>
+<img src="icon.png">
+
+<label for="eur">EUR</label>
+<input type="number" pattern="[0-9]*" id="eur" value="1">
+<input type="button" value="Convert">
+<output id="usd"></output>

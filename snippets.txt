@@ -1,3 +1,11 @@
+URLs:
+====
+WAM Generator: https://app-manifest.firebaseapp.com/
+Web Push with Firebase: https://firebase.google.com/docs/cloud-messaging/js/client
+Lighthouse: https://github.com/GoogleChrome/lighthouse
+Mobile Web Performance Checklist: https://www.oreilly.com/ideas/mobile-web-performance-checklist
+
+
 Snippet #1: SW installation
 ==========
 
